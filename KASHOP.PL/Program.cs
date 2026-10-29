@@ -2,6 +2,8 @@ using KASHOP.DAL.Data;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
+using KASHOP.DAL.Repository;
+using KASHOP.BLL.Services;
 namespace KASHOP.PL
 {
     public class Program
@@ -44,7 +46,8 @@ namespace KASHOP.PL
                 options.RequestCultureProviders.Clear();
                 options.RequestCultureProviders.Add(new QueryStringRequestCultureProvider());
             });
-
+            builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+            builder.Services.AddScoped<ICategoryService, CategoryService>();
 
             var app = builder.Build();
             app.UseRequestLocalization(app.Services.GetRequiredService<Microsoft.Extensions.Options.IOptions<RequestLocalizationOptions>>().Value);

@@ -7,6 +7,9 @@ using Mapster;
 using KASHOP.DAL.Models;
 using KASHOP.DAL.Data;
 using Microsoft.EntityFrameworkCore;
+using KASHOP.DAL.Repository;
+using KASHOP.BLL.Services;
+
 namespace KASHOP.PL.Controllers
 
 
@@ -15,31 +18,31 @@ namespace KASHOP.PL.Controllers
     [ApiController]
     public class CategoriesController : ControllerBase
     {
-        private readonly ApplicationDbContext _context;
+        private readonly ICategoryService _categoryService;
         private readonly IStringLocalizer<SharedResources> _localizer;
-
-        public CategoriesController(ApplicationDbContext context, IStringLocalizer<SharedResources> localizer)
+        public CategoriesController( ICategoryService categoryService, IStringLocalizer<SharedResources> localizer)
         {
-            _context = context;
+            _categoryService = categoryService;
             _localizer = localizer;
         }
         [HttpGet]
         public IActionResult Index()
         {
-            var categories = _context.Categories.Include(c => c.Translations).ToList();
-            var response = categories.Adapt<List<CategoryResponse>>();
+            var response = _categoryService.GetAllCategories();
             return Ok(new { Data = response, Message = _localizer["Success"].Value });
         }
-
+        // so always i will get the data from client as dto and then i will make it as domain model to save it in db and when i will send the data to client i will make it as dto to send it to client 
 
         [HttpPost]
         public IActionResult Create(CategoryRequest request)
         {
-            var category = request.Adapt<Category>();
-            _context.Add(category);
-            _context.SaveChanges();
-            return Ok(_localizer["Success"].Value);
-            
+            var response = _categoryService.CreateCategory(request);
+
+            return Ok(new
+            {
+                Data = response,
+                Message = _localizer["Success"].Value
+            });
         }
     }
 }
