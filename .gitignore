@@ -1,0 +1,20 @@
+## .NET build output
+bin/
+obj/
+
+## Visual Studio / Rider user files
+.vs/
+.idea/
+*.user
+*.suo
+
+## Local environment and secrets
+appsettings.Local.json
+appsettings.*.Local.json
+.env
+.env.*
+
+## OS files
+Thumbs.db
+Desktop.ini
+
