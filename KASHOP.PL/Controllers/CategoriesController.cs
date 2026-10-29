@@ -10,9 +10,8 @@ using Microsoft.EntityFrameworkCore;
 using KASHOP.DAL.Repository;
 using KASHOP.BLL.Services;
 
+
 namespace KASHOP.PL.Controllers
-
-
 {
     [Route("api/[controller]")]
     [ApiController]
@@ -26,17 +25,17 @@ namespace KASHOP.PL.Controllers
             _localizer = localizer;
         }
         [HttpGet]
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            var response = _categoryService.GetAllCategories();
+            var response = await _categoryService.GetAllCategories();
             return Ok(new { Data = response, Message = _localizer["Success"].Value });
         }
         // so always i will get the data from client as dto and then i will make it as domain model to save it in db and when i will send the data to client i will make it as dto to send it to client 
 
         [HttpPost]
-        public IActionResult Create(CategoryRequest request)
+        public async Task<IActionResult> Create(CategoryRequest request)
         {
-            var response = _categoryService.CreateCategory(request);
+            var response = await _categoryService.CreateCategory(request);
 
             return Ok(new
             {

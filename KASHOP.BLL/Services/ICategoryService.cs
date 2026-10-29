@@ -9,7 +9,7 @@ namespace KASHOP.BLL.Services
 {
     public interface ICategoryService
     {
-        public List<CategoryResponse> GetAllCategories();
-        public CategoryResponse CreateCategory(CategoryRequest categoryRequest);
+        public Task<List<CategoryResponse>> GetAllCategories();
+        public Task<CategoryResponse> CreateCategory(CategoryRequest categoryRequest);
     }
 }
