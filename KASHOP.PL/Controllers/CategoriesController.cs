@@ -27,21 +27,39 @@ namespace KASHOP.PL.Controllers
         [HttpGet]
         public async Task<IActionResult> Index()
         {
-            var response = await _categoryService.GetAllCategories();
+            var response = await _categoryService.GetAllAsync();
             return Ok(new { Data = response, Message = _localizer["Success"].Value });
         }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetOneById(int id)
+        {
+            var response = await _categoryService.GetOneAsync(c => c.Id == id);
+            if (response == null)
+            {
+                return NotFound(new { Message = _localizer["NotFound"].Value });
+            }
+            return Ok(new { Data = response, Message = _localizer["Success"].Value });
+        }
+
         // so always i will get the data from client as dto and then i will make it as domain model to save it in db and when i will send the data to client i will make it as dto to send it to client 
 
         [HttpPost]
         public async Task<IActionResult> Create(CategoryRequest request)
         {
-            var response = await _categoryService.CreateCategory(request);
+            var response = await _categoryService.CreateAsync(request);
 
             return Ok(new
             {
                 Data = response,
                 Message = _localizer["Success"].Value
             });
+        }
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var response = await _categoryService.DeleteAsync(id);
+            return Ok(new { Data = response, Message = _localizer["Success"].Value });
         }
     }
 }

@@ -7,10 +7,9 @@ using KASHOP.DAL.Models;
 
 namespace KASHOP.DAL.Repository
 {
-    public interface ICategoryRepository
+    public interface ICategoryRepository : IGenericRepository<Category>
     {
-       Task<List<Category>> GetAllCategories();
-        Task<Category> CreateCategory(Category category);
+    
 
     }
 }

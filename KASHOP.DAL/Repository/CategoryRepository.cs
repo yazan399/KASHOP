@@ -6,28 +6,17 @@ using System.Text;
 using System.Threading.Tasks;
 using KASHOP.DAL.Models;
 using Microsoft.EntityFrameworkCore;
+using KASHOP.DAL.Repository;
+using KASHOP.DAL.Dto;
 
 namespace KASHOP.DAL.Repository
 {
-    public class CategoryRepository : ICategoryRepository
+    public class CategoryRepository : GenericRepository<Category> , ICategoryRepository
     {
-        private readonly ApplicationDbContext _context;
-        public CategoryRepository(ApplicationDbContext context)
+        public CategoryRepository(ApplicationDbContext context) : base(context)
         {
-            _context = context;
-        }
-        public async Task<List<Category>> GetAllCategories()
-        {
-            var categories = await _context.Categories.Include(c => c.Translations).ToListAsync();
-            return categories;
         }
 
-        public async Task<Category> CreateCategory(Category category)
-        {
-            _context.Categories.Add(category);
-            await _context.SaveChangesAsync();
-            return category;
-        }
-
+        
     }
 }
