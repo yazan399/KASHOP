@@ -27,14 +27,24 @@ namespace KASHOP.PL.Controllers
         [HttpGet]
         public async Task<IActionResult> Index()
         {
-            var response = await _categoryService.GetAllAsync();
+            var response = await _categoryService.GetAllCategoriesAsync();
             return Ok(new { Data = response, Message = _localizer["Success"].Value });
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetOneById(int id)
         {
-            var response = await _categoryService.GetOneAsync(c => c.Id == id);
+            var response = await _categoryService.GetOneCategoryAsync(c => c.Id == id);
+            if (response == null)
+            {
+                return NotFound(new { Message = _localizer["NotFound"].Value });
+            }
+            return Ok(new { Data = response, Message = _localizer["Success"].Value });
+        }
+        [HttpGet("name/{name}")]
+        public async Task<IActionResult> GetOneByName(string name)
+        {
+            var response = await _categoryService.GetOneCategoryAsync(c => c.Translations.Any(t => t.Name == name));
             if (response == null)
             {
                 return NotFound(new { Message = _localizer["NotFound"].Value });
@@ -47,7 +57,7 @@ namespace KASHOP.PL.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(CategoryRequest request)
         {
-            var response = await _categoryService.CreateAsync(request);
+            var response = await _categoryService.CreateCategoryAsync(request);
 
             return Ok(new
             {
@@ -58,7 +68,7 @@ namespace KASHOP.PL.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            var response = await _categoryService.DeleteAsync(id);
+            var response = await _categoryService.DeleteCategoryAsync(id);
             return Ok(new { Data = response, Message = _localizer["Success"].Value });
         }
     }

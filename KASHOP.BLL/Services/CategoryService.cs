@@ -17,19 +17,19 @@ namespace KASHOP.BLL.Services
         {
             _categoryRepository = categoryRepository;
         }
-        public async Task<List<CategoryResponse>> GetAllAsync()
+        public async Task<List<CategoryResponse>> GetAllCategoriesAsync()
         {
             var categories = await _categoryRepository.GetAllAsync(new string[] { nameof(Category.Translations) });
             var response = categories.Adapt<List<CategoryResponse>>();
             return response;
         }
-        public async Task<CategoryResponse> GetOneAsync(Expression<Func<Category, bool>> filter)
+        public async Task<CategoryResponse> GetOneCategoryAsync(Expression<Func<Category, bool>> filter)
         {
             var category = await _categoryRepository.GetOneAsync(filter, new string[] { nameof(Category.Translations) });
             var response = category.Adapt<CategoryResponse>();
             return response;
         }
-        public async Task<CategoryResponse> CreateAsync(CategoryRequest categoryRequest)
+        public async Task<CategoryResponse> CreateCategoryAsync(CategoryRequest categoryRequest)
         {
             var category = categoryRequest.Adapt<Category>();
             var createdCategory = await _categoryRepository.CreateAsync(category);
@@ -37,10 +37,10 @@ namespace KASHOP.BLL.Services
             return response;
         }
 
-        public async Task<CategoryResponse> DeleteAsync(int id)
+        public async Task<CategoryResponse> DeleteCategoryAsync(int id)
         {
             var category = await _categoryRepository.GetOneAsync(c => c.Id == id);
-            if (category == null)
+            if (category == null)   
             {
                 throw new Exception("Category not found");
             }
