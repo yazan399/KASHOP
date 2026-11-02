@@ -6,42 +6,22 @@ using System.Threading.Tasks;
 using System.Net.Mail;
 using System.Net;
 using Microsoft.AspNetCore.Identity.UI.Services;
-using Microsoft.Extensions.Configuration;
 
 
 namespace KASHOP.BLL.Common
 {
     public class EmailSender : IEmailSender
     {
-        private readonly IConfiguration _configuration;
-
-        public EmailSender(IConfiguration configuration)
-        {
-            _configuration = configuration;
-        }
-
         public Task SendEmailAsync(string email, string subject, string htmlMessage)
         {
-            var smtpHost = _configuration["Email:SmtpHost"] ?? "smtp.gmail.com";
-            var smtpPort = int.TryParse(_configuration["Email:SmtpPort"], out var port)
-                ? port
-                : 587;
-            var senderEmail = _configuration["Email:SenderEmail"];
-            var senderPassword = _configuration["Email:SenderPassword"];
-
-            if (string.IsNullOrWhiteSpace(senderEmail) || string.IsNullOrWhiteSpace(senderPassword))
-            {
-                throw new InvalidOperationException("Email sender credentials are not configured.");
-            }
-
-            var client = new SmtpClient(smtpHost, smtpPort)
+            var client = new SmtpClient("smtp.gmail.com", 587)
             {
                 EnableSsl = true,
                 UseDefaultCredentials = false,
-                Credentials = new NetworkCredential(senderEmail, senderPassword)
+                Credentials = new NetworkCredential("yoyoyazan22@gmail.com", "viom xvbl mmly ddao")
             };
             return client.SendMailAsync(
-                new MailMessage(from: senderEmail,
+                new MailMessage(from: "yoyoyazan22@gmail.com",
                     to: email,
                     subject: subject,
                     body: htmlMessage)
