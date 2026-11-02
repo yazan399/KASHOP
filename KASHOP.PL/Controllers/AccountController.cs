@@ -17,9 +17,9 @@ namespace KASHOP.PL.Controllers
     [ApiController]
     public class AccountController : ControllerBase
     {
-        private readonly IAuthenticationUserService _authenticationUserService;
+        private readonly IAuthenticationService _authenticationUserService;
 
-        public AccountController(IAuthenticationUserService authenticationUserService)
+        public AccountController(IAuthenticationService authenticationUserService)
         {
             _authenticationUserService = authenticationUserService;
         }
@@ -29,6 +29,17 @@ namespace KASHOP.PL.Controllers
         {
             var response = await _authenticationUserService.RegisterAsync(request);
             return Ok(response);
+        }
+        [HttpPost("login")]
+        public async Task<IActionResult> Login(LoginRequest request)
+        {
+            var response = await _authenticationUserService.LoginAsync(request);
+            return Ok(response);
+        }
+        [HttpGet("ConfirmEmail")]
+        public async Task<IActionResult> ConfirmEmail(string email)
+        {
+            return Ok($"Email {email} confirmed successfully.");
         }
 
     }

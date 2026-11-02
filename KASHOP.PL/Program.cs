@@ -6,8 +6,10 @@ using KASHOP.DAL.Repository;
 using KASHOP.BLL.Services;
 using Microsoft.AspNetCore.Identity;
 using KASHOP.DAL.Models;
+using KASHOP.BLL.Common;
 using KASHOP.PL.Utils;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.Identity.UI.Services;
 
 namespace KASHOP.PL
 {
@@ -58,8 +60,9 @@ namespace KASHOP.PL
                 .AddEntityFrameworkStores<ApplicationDbContext>()
                 .AddDefaultTokenProviders();
 
-            builder.Services.AddScoped<IAuthenticationUserService, AuthenticationUserService>();
+            builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
             builder.Services.AddScoped<ISeedData, RoleSeedData>();
+            builder.Services.AddTransient<IEmailSender, EmailSender>();
 
             var app = builder.Build();
 

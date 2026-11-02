@@ -7,8 +7,9 @@ using KASHOP.DAL.Dto;
 
 namespace KASHOP.BLL.Services
 {
-    public interface IAuthenticationUserService
+    public interface IAuthenticationService
     {
+        public Task<LoginResponse> LoginAsync(LoginRequest request);
         public Task<RegisterResponse> RegisterAsync(RegisterRequest request);
     }
 }   

@@ -8,6 +8,7 @@
 
   <ItemGroup>
 	  <PackageReference Include="Mapster" Version="7.4.0" />
+	  <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="9.0.21" />
 
 	  <ProjectReference Include="..\KASHOP.DAL\KASHOP.DAL.csproj" />
   </ItemGroup>
