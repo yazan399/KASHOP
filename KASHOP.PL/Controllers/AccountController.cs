@@ -6,7 +6,7 @@ using KASHOP.DAL.Dto;
 using Mapster;
 using KASHOP.DAL.Models;
 using KASHOP.DAL.Data;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore; 
 using KASHOP.DAL.Repository;
 using KASHOP.BLL.Services;
 
@@ -25,21 +25,29 @@ namespace KASHOP.PL.Controllers
         }
 
         [HttpPost("register")]
-        public async Task<IActionResult> Register( RegisterRequest request)
+        public async Task<IActionResult> Register( [FromBody] RegisterRequest request)
         {
             var response = await _authenticationUserService.RegisterAsync(request);
             return Ok(response);
         }
         [HttpPost("login")]
-        public async Task<IActionResult> Login(LoginRequest request)
+        public async Task<IActionResult> Login( [FromBody] LoginRequest request)
         {
             var response = await _authenticationUserService.LoginAsync(request);
             return Ok(response);
         }
         [HttpGet("ConfirmEmail")]
-        public async Task<IActionResult> ConfirmEmail(string email)
+        public async Task<IActionResult> ConfirmEmail( [FromQuery]ConfirmEmailRequest request)
         {
-            return Ok($"Email {email} confirmed successfully.");
+            var isConfirmed = await _authenticationUserService.ConfirmEmail(request);
+            if (isConfirmed)
+            {
+                return Content($"Email confirmed successfully for user {request.UserId} with token {request.Token}");
+            }
+            else
+            {
+                return BadRequest("Failed to confirm email.");
+            }
         }
 
     }

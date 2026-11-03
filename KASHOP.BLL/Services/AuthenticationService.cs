@@ -33,17 +33,44 @@ namespace KASHOP.BLL.Services
             var user = await _userManager.FindByEmailAsync(request.Email);
             if (user == null)
             {
-                return new LoginResponse { Message = "User not found." };
+                return new LoginResponse { Message = "Invalid Email." };
             }
 
-            var isPasswordValid = await _userManager.CheckPasswordAsync(user, request.Password);
-            if (!isPasswordValid)
+            if(!await _userManager.IsEmailConfirmedAsync(user))
+            {
+                return new LoginResponse { Message = "Email is not confirmed." };
+            }
+
+            var result = await _userManager.CheckPasswordAsync(user, request.Password);
+            if (!result)
             {
                 return new LoginResponse { Message = "Invalid password." };
             }
 
             return new LoginResponse { Message = "Login successful." };
         }
+
+        public async Task<bool> ConfirmEmail(ConfirmEmailRequest request)
+        {
+
+            var user = await _userManager.FindByIdAsync(request.UserId);
+            if (user == null)
+            {
+                return false;
+            }
+            request.Token = Uri.UnescapeDataString(request.Token); // Unescape the token to get the original value
+
+            var result = await _userManager.ConfirmEmailAsync(user, request.Token);
+            if (result.Succeeded)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+        
 
         public async Task<RegisterResponse> RegisterAsync(RegisterRequest request)
         {
@@ -53,7 +80,10 @@ namespace KASHOP.BLL.Services
 
             if (result.Succeeded)
             {
-                var emailUrl = $"https://localhost:7158/api/Account/ConfirmEmail?email={request.Email}";
+
+                var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+                token = Uri.EscapeDataString(token); // Escape the token to make it URL-safe
+                var emailUrl = $"https://localhost:7158/api/Account/ConfirmEmail?token={token}&userId={user.Id}";
                 await _emailSender.SendEmailAsync(user.Email, "confirm email", $"<h1>Welcome to our app</h1><p>Please click the link to confirm your email: <a href=\"{emailUrl}\">Confirm Email</a></p>");
 
                 return new RegisterResponse { Message = "User registered successfully." };
