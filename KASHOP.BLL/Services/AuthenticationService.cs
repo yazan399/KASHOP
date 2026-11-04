@@ -1,28 +1,34 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using KASHOP.DAL.Dto;
-using System.Threading.Tasks;
-using KASHOP.DAL.Models;
-using Microsoft.AspNetCore.Identity;
-using KASHOP.DAL.Data;
-using Microsoft.EntityFrameworkCore;
-using KASHOP.DAL.Repository;
+﻿using KASHOP.BLL.Common;
 using KASHOP.BLL.Services;
-using KASHOP.BLL.Common;
+using KASHOP.DAL.Data;
+using KASHOP.DAL.Dto;
+using KASHOP.DAL.Models;
 using Mapster;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
+using System;
+using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
+using System.Security.Claims;
+using System.Text;
+using System.Threading.Tasks;
+
 
 
 namespace KASHOP.BLL.Services
 {
     public class AuthenticationService : IAuthenticationService
     {
+        private readonly IConfiguration _config;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IEmailSender _emailSender;
-        public AuthenticationService(UserManager<ApplicationUser> userManager, IEmailSender emailSender)
+        public AuthenticationService(IConfiguration config, UserManager<ApplicationUser> userManager, IEmailSender emailSender)
         {
+            _config = config;
             _userManager = userManager;
             _emailSender = emailSender;
 
@@ -46,8 +52,8 @@ namespace KASHOP.BLL.Services
             {
                 return new LoginResponse { Message = "Invalid password." };
             }
-
-            return new LoginResponse { Message = "Login successful." };
+            var token = await GenerateJwt(user);
+            return new LoginResponse { Message = "Login successful.", Token = token };
         }
 
         public async Task<bool> ConfirmEmail(ConfirmEmailRequest request)
@@ -94,7 +100,33 @@ namespace KASHOP.BLL.Services
             }
 
 
+
         }
+        private async Task<string> GenerateJwt(ApplicationUser user)
+        {
+            var roles = await _userManager.GetRolesAsync(user);
+            var userClaims = new List<Claim>()
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.Email, user.Email),
+                new Claim(ClaimTypes.Name, user.UserName),
+                new Claim(ClaimTypes.Role, string.Join(",", roles))
+            };
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["ApiSettings:SecretKey"]));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            var token = new JwtSecurityToken(
+                issuer: _config["ApiSettings:Issuer"],
+                audience: _config["ApiSettings:Audience"],
+                claims: userClaims,
+                expires: DateTime.UtcNow.AddDays(20),
+                signingCredentials: creds
+            );
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
+
     }
 }
     

@@ -1,15 +1,18 @@
+using KASHOP.BLL.Common;
+using KASHOP.BLL.Services;
 using KASHOP.DAL.Data;
+using KASHOP.DAL.Models;
+using KASHOP.DAL.Repository;
+using KASHOP.PL.Utils;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
-using System.Globalization;
-using KASHOP.DAL.Repository;
-using KASHOP.BLL.Services;
-using Microsoft.AspNetCore.Identity;
-using KASHOP.DAL.Models;
-using KASHOP.BLL.Common;
-using KASHOP.PL.Utils;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.IdentityModel.Tokens;
+using System.Globalization;
+using System.Text;
 
 namespace KASHOP.PL
 {
@@ -65,9 +68,33 @@ namespace KASHOP.PL
                 .AddEntityFrameworkStores<ApplicationDbContext>()
                 .AddDefaultTokenProviders();
 
+            builder.Services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+               .AddJwtBearer(options =>
+               {
+                   options.MapInboundClaims = false;
+                   options.TokenValidationParameters = new TokenValidationParameters
+                   {
+                       ValidateIssuer = true,
+                       ValidateAudience = true,
+                       ValidateLifetime = true,
+                       ValidateIssuerSigningKey = true,
+                       ValidIssuer = builder.Configuration["ApiSettings:Issuer"],
+                       ValidAudience = builder.Configuration["ApiSettings:Audience"],
+                       IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["ApiSettings:SecretKey"])),
+                   };
+
+               });
+            builder.Services.AddAuthorization();
+
             builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
             builder.Services.AddScoped<ISeedData, RoleSeedData>();
             builder.Services.AddTransient<IEmailSender, EmailSender>();
+
+           
 
             var app = builder.Build();
 

@@ -9,12 +9,14 @@ using KASHOP.DAL.Data;
 using Microsoft.EntityFrameworkCore;
 using KASHOP.DAL.Repository;
 using KASHOP.BLL.Services;
+using Microsoft.AspNetCore.Authorization;
 
 
 namespace KASHOP.PL.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class CategoriesController : ControllerBase
     {
         private readonly ICategoryService _categoryService;
