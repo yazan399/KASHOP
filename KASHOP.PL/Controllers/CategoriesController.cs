@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
 using KASHOP.PL.Resources;
 using KASHOP.DAL.Dto;
+using System.Security.Claims;
 using Mapster;
 using KASHOP.DAL.Models;
 using KASHOP.DAL.Data;

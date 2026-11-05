@@ -23,6 +23,12 @@ namespace KASHOP.PL.Controllers
         {
             _authenticationUserService = authenticationUserService;
         }
+        [HttpGet("users")]
+        public async Task<IActionResult> GetAll()
+        {
+            var response = await _authenticationUserService.GetAllUsersAsync();
+            return Ok(response);
+        }
 
         [HttpPost("register")]
         public async Task<IActionResult> Register( [FromBody] RegisterRequest request)

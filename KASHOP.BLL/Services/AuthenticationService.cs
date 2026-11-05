@@ -33,6 +33,10 @@ namespace KASHOP.BLL.Services
             _emailSender = emailSender;
 
         }
+        public async Task<List<ApplicationUser>> GetAllUsersAsync()
+        {
+            return await _userManager.Users.ToListAsync();
+        }
 
         public async Task<LoginResponse> LoginAsync(LoginRequest request)
         {
