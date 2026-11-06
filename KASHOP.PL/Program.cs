@@ -14,6 +14,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using System.Globalization;
 using System.Text;
+using KASHOP.BLL.Mapping;
 
 namespace KASHOP.PL
 {
@@ -29,6 +30,7 @@ namespace KASHOP.PL
 
             app.UseRequestLocalization(app.Services.GetRequiredService<Microsoft.Extensions.Options.IOptions<RequestLocalizationOptions>>().Value);
 
+            MapsterConfig.MappingConfigRegister();
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {

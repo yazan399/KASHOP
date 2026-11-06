@@ -8,6 +8,7 @@ using KASHOP.DAL.Dto;
 using Mapster;
 using System.Linq.Expressions;
 using KASHOP.DAL.Repository;
+using System.Globalization;
 namespace KASHOP.BLL.Services
 {
     public class CategoryService : ICategoryService
@@ -19,13 +20,14 @@ namespace KASHOP.BLL.Services
         }
         public async Task<List<CategoryResponse>> GetAllCategoriesAsync()
         {
-            var categories = await _categoryRepository.GetAllAsync(new string[] { nameof(Category.Translations) });
+
+            var categories = await _categoryRepository.GetAllAsync(new string[] { nameof(Category.Translations) , nameof(Category.CreatedBy) });
             var response = categories.Adapt<List<CategoryResponse>>();
             return response;
         }
         public async Task<CategoryResponse> GetOneCategoryAsync(Expression<Func<Category, bool>> filter)
         {
-            var category = await _categoryRepository.GetOneAsync(filter, new string[] { nameof(Category.Translations) });
+            var category = await _categoryRepository.GetOneAsync(filter, new string[] { nameof(Category.Translations) , nameof(Category.CreatedBy) });
             var response = category.Adapt<CategoryResponse>();
             return response;
         }

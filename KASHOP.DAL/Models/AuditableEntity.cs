@@ -8,8 +8,7 @@ namespace KASHOP.DAL.Models
 {
     public class AuditableEntity
     {
-        public int Id { get; set; }
-        public string? CreatedById { get; set; }
+        public string CreatedById { get; set; }
 
         public DateTime CreatedOn { get; set; }
 
