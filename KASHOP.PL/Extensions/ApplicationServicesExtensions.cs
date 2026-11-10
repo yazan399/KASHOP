@@ -11,13 +11,21 @@ namespace KASHOP.PL.Extensions
     public static class ApplicationServicesExtensions
     {
 
-        public static IServiceCollection addApplicationServices (this IServiceCollection Services, IConfiguration Configuration)
+        public static IServiceCollection AddServices (this IServiceCollection Services, IConfiguration Configuration)
         {
-            Services.AddScoped<ICategoryRepository, CategoryRepository>();
+            Services.AddScoped<ICheckoutService, CheckoutService>();
+            Services.AddScoped<IUnitOfWork, UnitOfWork>();
+            Services.AddExceptionHandler<GlobalExceptionHandler>();
+            Services.AddScoped<IFileService, FileService>();
+            Services.AddScoped<IProductService, ProductService>();
             Services.AddScoped<ICategoryService, CategoryService>();
+            Services.AddScoped<ICartService, CartService>();
+
             Services.AddScoped<IAuthenticationService, AuthenticationService>();
             Services.AddScoped<ISeedData, RoleSeedData>();
             Services.AddTransient<IEmailSender, EmailSender>();
+
+            Services.AddProblemDetails();
 
             return Services;
         }

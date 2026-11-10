@@ -13,42 +13,59 @@ namespace KASHOP.BLL.Services
 {
     public class CategoryService : ICategoryService
     {
-        private readonly ICategoryRepository _categoryRepository;
-        public CategoryService(ICategoryRepository categoryRepository)
+        private readonly IUnitOfWork _unitOfWork    ;
+        public CategoryService(IUnitOfWork unitOfWork)
         {
-            _categoryRepository = categoryRepository;
+            _unitOfWork = unitOfWork;
         }
-        public async Task<List<CategoryResponse>> GetAllCategoriesAsync()
+        public async Task<Result<List<CategoryResponse>>> GetAllCategoriesAsync()
         {
-
-            var categories = await _categoryRepository.GetAllAsync(new string[] { nameof(Category.Translations) , nameof(Category.CreatedBy) });
+            var categories = await _unitOfWork.CategoryRepository.GetAllAsync(includes: new string[] { nameof(Category.Translations), nameof(Category.CreatedBy) });
             var response = categories.Adapt<List<CategoryResponse>>();
-            return response;
+            return Result<List<CategoryResponse>>.Ok(response);
         }
-        public async Task<CategoryResponse> GetOneCategoryAsync(Expression<Func<Category, bool>> filter)
+        public async Task<Result<CategoryResponse>> GetOneCategoryAsync(
+            Expression<Func<Category, bool>> filter)
         {
-            var category = await _categoryRepository.GetOneAsync(filter, new string[] { nameof(Category.Translations) , nameof(Category.CreatedBy) });
+            var category = await _unitOfWork.CategoryRepository.GetOneAsync(
+                filter,
+                new[]
+                {
+                    nameof(Category.Translations),
+                    nameof(Category.CreatedBy)
+                });
+
+            if (category == null)
+            {
+                return Result<CategoryResponse>.Fail("Category not found");
+            }
+
             var response = category.Adapt<CategoryResponse>();
-            return response;
+            return Result<CategoryResponse>.Ok(response);
         }
-        public async Task<CategoryResponse> CreateCategoryAsync(CategoryRequest categoryRequest)
+        public async Task<Result<CategoryResponse>> CreateCategoryAsync(CategoryRequest categoryRequest)
         {
             var category = categoryRequest.Adapt<Category>();
-            var createdCategory = await _categoryRepository.CreateAsync(category);
+            var createdCategory = await _unitOfWork.CategoryRepository.CreateAsync(category);
+            await _unitOfWork.CompleteAsync();
+            var creatoruser = await _unitOfWork.CategoryRepository.GetOneAsync(c => c.Id == createdCategory.Id, new string[] { nameof(Category.CreatedBy) });
             var response = createdCategory.Adapt<CategoryResponse>();
-            return response;
+            return Result<CategoryResponse>.Ok(response);
         }
 
-        public async Task<CategoryResponse> DeleteCategoryAsync(int id)
+        public async Task<Result<CategoryResponse>> DeleteCategoryAsync(int id)
         {
-            var category = await _categoryRepository.GetOneAsync(c => c.Id == id);
-            if (category == null)   
+            var category = await _unitOfWork.CategoryRepository.GetOneAsync(c => c.Id == id);
+            if (category == null)
             {
-                throw new Exception("Category not found");
+                return Result<CategoryResponse>.Fail("Category not found");
             }
-            var deletedCategory = await _categoryRepository.DeleteAsync(category);
-            return deletedCategory.Adapt<CategoryResponse>();
+
+           _unitOfWork.CategoryRepository.Delete(category);
+            var affectedRows = await _unitOfWork.CompleteAsync();
+            return Result<CategoryResponse>.Ok();
         }
 
     }
 }
+

@@ -30,29 +30,46 @@ namespace KASHOP.PL.Controllers
         [HttpGet]
         public async Task<IActionResult> Index()
         {
-            var response = await _categoryService.GetAllCategoriesAsync();
-            return Ok(new { Data = response, Message = _localizer["Success"].Value });
+            var result = await _categoryService.GetAllCategoriesAsync();
+            if (!result.Success)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new { Message = result.Message });
+            }
+
+            return Ok(new { Data = result.Data, Message = _localizer["Success"].Value });
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetOneById(int id)
         {
-            var response = await _categoryService.GetOneCategoryAsync(c => c.Id == id);
-            if (response == null)
+            var result = await _categoryService.GetOneCategoryAsync(c => c.Id == id);
+            if (!result.Success)
             {
-                return NotFound(new { Message = _localizer["NotFound"].Value });
+                if (result.Message == "Category not found")
+                {
+                    return NotFound(new { Message = _localizer["NotFound"].Value });
+                }
+
+                return StatusCode(StatusCodes.Status500InternalServerError, new { Message = result.Message });
             }
-            return Ok(new { Data = response, Message = _localizer["Success"].Value });
+
+            return Ok(new { Data = result.Data, Message = _localizer["Success"].Value });
         }
         [HttpGet("name/{name}")]
         public async Task<IActionResult> GetOneByName(string name)
         {
-            var response = await _categoryService.GetOneCategoryAsync(c => c.Translations.Any(t => t.Name == name));
-            if (response == null)
+            var result = await _categoryService.GetOneCategoryAsync(c => c.Translations.Any(t => t.Name == name));
+            if (!result.Success)
             {
-                return NotFound(new { Message = _localizer["NotFound"].Value });
+                if (result.Message == "Category not found")
+                {
+                    return NotFound(new { Message = _localizer["NotFound"].Value });
+                }
+
+                return StatusCode(StatusCodes.Status500InternalServerError, new { Message = result.Message });
             }
-            return Ok(new { Data = response, Message = _localizer["Success"].Value });
+
+            return Ok(new { Data = result.Data, Message = _localizer["Success"].Value });
         }
 
         // so always i will get the data from client as dto and then i will make it as domain model to save it in db and when i will send the data to client i will make it as dto to send it to client 
@@ -60,19 +77,33 @@ namespace KASHOP.PL.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(CategoryRequest request)
         {
-            var response = await _categoryService.CreateCategoryAsync(request);
+            var result = await _categoryService.CreateCategoryAsync(request);
+            if (!result.Success)
+            {
+                return BadRequest(new { Message = result.Message });
+            }
 
             return Ok(new
             {
-                Data = response,
+                Data = result.Data,
                 Message = _localizer["Success"].Value
             });
         }
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            var response = await _categoryService.DeleteCategoryAsync(id);
-            return Ok(new { Data = response, Message = _localizer["Success"].Value });
+            var result = await _categoryService.DeleteCategoryAsync(id);
+            if (!result.Success)
+            {
+                if (result.Message == "Category not found")
+                {
+                    return NotFound(new { Message = _localizer["NotFound"].Value });
+                }
+
+                return StatusCode(StatusCodes.Status500InternalServerError, new { Message = result.Message });
+            }
+
+            return Ok(new { Data = result.Data, Message = _localizer["Success"].Value });
         }
     }
 }

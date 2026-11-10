@@ -26,34 +26,47 @@ namespace KASHOP.PL.Controllers
         [HttpGet("users")]
         public async Task<IActionResult> GetAll()
         {
-            var response = await _authenticationUserService.GetAllUsersAsync();
-            return Ok(response);
+            var result = await _authenticationUserService.GetAllUsersAsync();
+            if (!result.Success)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new { Message = result.Message });
+            }
+
+            return Ok(result.Data);
         }
 
         [HttpPost("register")]
         public async Task<IActionResult> Register( [FromBody] RegisterRequest request)
         {
-            var response = await _authenticationUserService.RegisterAsync(request);
-            return Ok(response);
+            var result = await _authenticationUserService.RegisterAsync(request);
+            if (!result.Success)
+            {
+                return BadRequest(new { Message = result.Message });
+            }
+
+            return Ok(result.Data);
         }
         [HttpPost("login")]
         public async Task<IActionResult> Login( [FromBody] LoginRequest request)
         {
-            var response = await _authenticationUserService.LoginAsync(request);
-            return Ok(response);
+            var result = await _authenticationUserService.LoginAsync(request);
+            if (!result.Success)
+            {
+                return Unauthorized(new { Message = result.Message });
+            }
+
+            return Ok(result.Data);
         }
         [HttpGet("ConfirmEmail")]
         public async Task<IActionResult> ConfirmEmail( [FromQuery]ConfirmEmailRequest request)
         {
-            var isConfirmed = await _authenticationUserService.ConfirmEmail(request);
-            if (isConfirmed)
+            var result = await _authenticationUserService.ConfirmEmail(request);
+            if (result.Success && result.Data == true)
             {
                 return Content($"Email confirmed successfully for user {request.UserId} with token {request.Token}");
             }
-            else
-            {
-                return BadRequest("Failed to confirm email.");
-            }
+
+            return BadRequest(result.Message);
         }
 
     }

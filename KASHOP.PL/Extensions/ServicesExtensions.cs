@@ -6,11 +6,11 @@
         {
             Services.AddControllers();
             Services.AddOpenApi();
-           Services.AddDatabaseServices(Configuration);
-           Services.AddIdentityServices();
+            Services.AddDatabaseServices(Configuration);
+            Services.AddIdentityServices();
             Services.AddJwtAuthentication(Configuration);
-         Services.AddLocalizationServices(Configuration);
-          Services.addApplicationServices(Configuration);
+            Services.AddLocalizationServices(Configuration);
+            Services.AddServices(Configuration);
 
             return Services;
         }
