@@ -1,6 +1,7 @@
 ﻿using KASHOP.DAL.Enums;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -29,5 +30,11 @@ namespace KASHOP.DAL.Models
         
         public List<OrderItem> OrderItems { get; set; } 
 
+
+        public string? StripeSessionId { get; set; }
+        public string? StripePaymentIntentId { get; set; }
+
+        public DateTime? PaidAt { get; set; }
     }
 }
+    

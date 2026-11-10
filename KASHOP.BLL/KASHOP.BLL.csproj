@@ -10,6 +10,7 @@
 	  <PackageReference Include="CloudinaryDotNet" Version="1.29.3" />
 	  <PackageReference Include="Mapster" Version="7.4.0" />
 	  <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="9.0.21" />
+	  <PackageReference Include="Stripe.net" Version="53.1.0" />
 
 	  <ProjectReference Include="..\KASHOP.DAL\KASHOP.DAL.csproj" />
   </ItemGroup>

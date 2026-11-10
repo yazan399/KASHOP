@@ -25,5 +25,7 @@ namespace KASHOP.DAL.Dto
 
 
         public List<OrderItemResponse> OrderItems { get; set; }
+
+        public string? PaymentUrl { get; set; }
     }
 }

@@ -39,6 +39,8 @@ namespace KASHOP.BLL.Services
                     nameof(CartItem.Product),
                     $"{nameof(CartItem.Product)}.{nameof(Product.Translations)}"
                 });
+
+
             if (cartItems == null)
             {
                 return Result<OrderResponse>.Fail("User not found");
@@ -81,7 +83,7 @@ namespace KASHOP.BLL.Services
                 return Result<OrderResponse>.Fail("City, Street, and Phone Number are required.");
             }
 
-            // Create the order and order items.... why didnt use adapt and did manually? 
+            // Create the order and his list of order items
             var order = new Order
             {
                 UserId = userId,
@@ -97,7 +99,7 @@ namespace KASHOP.BLL.Services
 
 
 
-            // Calculate the total amount and create order items
+            // Calculate the total amount and create order items one by one in the loop
             decimal TotalAmount = 0; 
 
             foreach (var item in cartItems)
@@ -118,19 +120,75 @@ namespace KASHOP.BLL.Services
 
            order.TotalAmount = TotalAmount;
 
-            await _unitOfWork.OrderRepository.CreateAsync(order);
-            foreach (var item in cartItems)
-            {
-               _unitOfWork.CartRepository.Delete(item);
-            }
 
-            await _unitOfWork.CompleteAsync();
-            var response = order.Adapt<OrderResponse>();
-            return Result<OrderResponse>.Ok(response);
+
+            if(request.PaymentMethod == DAL.Enums.PaymentMethodEnum.Cash)
+            {
+                return await PlaceCashOrderAsync(order, cartItems);
+            }
+             else return await PlaceVisaOrderAsync(order, cartItems);
+
+
+
+
+
+
+
         }
 
-            
-        
-   
+
+        private async Task<Result<OrderResponse>> PlaceCashOrderAsync(Order order, List<CartItem> cartItems)
+        {
+            foreach (var item in cartItems)
+            {
+                item.Product.Quantity -= item.Count; // Decrease the product quantity
+                _unitOfWork.CartRepository.Delete(item);
+            }
+            await _unitOfWork.OrderRepository.CreateAsync(order);
+            await _unitOfWork.CompleteAsync();
+            var response = order.Adapt<OrderResponse>();
+            return Result<OrderResponse>.Ok(response, "Order placed successfully with cash payment.");
+        }
+
+
+        private async Task<Result<OrderResponse>> PlaceVisaOrderAsync(Order order, List<CartItem> cartItems)
+        {
+            var options = new Stripe.Checkout.SessionCreateOptions
+            {
+                
+                LineItems = new List<Stripe.Checkout.SessionLineItemOptions>(),
+                Mode = "payment",
+                SuccessUrl = "https://localhost:44396/checkout/success?session_id={CHECKOUT_SESSION_ID}",
+                CancelUrl = "https://localhost:44396/checkout/cancel",
+            };
+            foreach (var item in cartItems)
+            {
+                var lineItem = new Stripe.Checkout.SessionLineItemOptions
+                {
+                    PriceData = new Stripe.Checkout.SessionLineItemPriceDataOptions
+                    {
+                        UnitAmountDecimal = item.Product.Price * 100, // Convert to cents
+                        Currency = "usd",
+                        ProductData = new Stripe.Checkout.SessionLineItemPriceDataProductDataOptions
+                        {
+                            Name = item.Product.Translations.First(t => t.Language == CultureInfo.CurrentUICulture.Name).Name,
+
+                        },
+                    },
+                    Quantity = item.Count,
+                };
+                options.LineItems.Add(lineItem);
+            }
+            var service = new Stripe.Checkout.SessionService();
+            var session = await service.CreateAsync(options);
+            order.StripeSessionId = session.Id;
+            order.StripePaymentIntentId = session.PaymentIntentId;
+            await _unitOfWork.OrderRepository.CreateAsync(order);
+            await _unitOfWork.CompleteAsync();
+            var response = order.Adapt<OrderResponse>();
+            response.PaymentUrl = session.Url;
+            return Result<OrderResponse>.Ok(response, "Order placed successfully. Redirect to payment.");
+        }
+
     }
 }
