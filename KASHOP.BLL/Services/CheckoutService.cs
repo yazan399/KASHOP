@@ -13,17 +13,20 @@ using Microsoft.AspNetCore.Identity;
 using System.Net.Http.Headers;
 
 using System.Globalization;
+using Microsoft.AspNetCore.Http;
 
 namespace KASHOP.BLL.Services
 {
     public class CheckoutService : ICheckoutService
     {
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IUnitOfWork _unitOfWork;
-        public CheckoutService(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager)
+        public CheckoutService(IHttpContextAccessor httpContextAccessor, IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager)
         {
             _unitOfWork = unitOfWork;
             _userManager = userManager;
+            _httpContextAccessor = httpContextAccessor;
         }
 
 
@@ -153,13 +156,16 @@ namespace KASHOP.BLL.Services
 
         private async Task<Result<OrderResponse>> PlaceVisaOrderAsync(Order order, List<CartItem> cartItems)
         {
+            var request = _httpContextAccessor.HttpContext.Request;
+            var baseUrl = $"{request.Scheme}://{request.Host}";
             var options = new Stripe.Checkout.SessionCreateOptions
             {
                 
                 LineItems = new List<Stripe.Checkout.SessionLineItemOptions>(),
                 Mode = "payment",
-                SuccessUrl = "https://localhost:44396/checkout/success?session_id={CHECKOUT_SESSION_ID}",
-                CancelUrl = "https://localhost:44396/checkout/cancel",
+                SuccessUrl = $"{baseUrl}/api/orders/payment/success?sessionId={{CHECKOUT_SESSION_ID}}",
+                CancelUrl = $"{baseUrl}/api/orders/payment/cancel?sessionId={{CHECKOUT_SESSION_ID}}",
+                ExpiresAt = DateTime.UtcNow.AddMinutes(30)
             };
             foreach (var item in cartItems)
             {
@@ -190,5 +196,45 @@ namespace KASHOP.BLL.Services
             return Result<OrderResponse>.Ok(response, "Order placed successfully. Redirect to payment.");
         }
 
+
+        public async Task<Result<OrderResponse>> HandleSuccess(string sessionId)
+        {
+            var order = await _unitOfWork.OrderRepository.GetOneAsync(
+                o => o.StripeSessionId == sessionId,
+                new[]
+                {
+                    $"{nameof(Order.OrderItems)}.{nameof(OrderItem.Product)}",
+                    $"{nameof(Order.OrderItems)}.{nameof(OrderItem.Product)}.{nameof(Product.Translations)}"
+                });
+            if (order.PaymentStatus == DAL.Enums.PaymentStatusEnum.Paid)
+            {
+                return Result<OrderResponse>.Fail("Order already paid.");
+            }
+            var sessionService = new Stripe.Checkout.SessionService();
+            var session = await sessionService.GetAsync(sessionId);
+            if (session.PaymentStatus is not "paid")
+            {
+                return Result<OrderResponse>.Fail("Payment not completed.");
+            }
+            order.PaymentStatus = DAL.Enums.PaymentStatusEnum.Paid;
+            order.Status = DAL.Enums.OrderStatusEnum.Confirmed;
+            order.AmountPaid = session.AmountTotal.HasValue ? session.AmountTotal.Value / 100m : null;
+            order.PaidAt = DateTime.UtcNow;
+            order.StripePaymentIntentId = session.PaymentIntentId;
+            foreach (var item in order.OrderItems)
+            {
+                item.Product.Quantity -= item.Count; // Decrease the product quantity
+            }
+            var cartItems =await _unitOfWork.CartRepository.GetAllAsync(c => c.UserId == order.UserId);
+
+            foreach (var item in cartItems)
+            {
+                _unitOfWork.CartRepository.Delete(item);
+            }
+
+
+            await _unitOfWork.CompleteAsync();
+            return Result<OrderResponse>.Ok(order.Adapt<OrderResponse>(), "Payment successful and order confirmed.");
+        }
     }
 }

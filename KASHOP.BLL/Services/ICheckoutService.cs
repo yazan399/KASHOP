@@ -10,6 +10,7 @@ namespace KASHOP.BLL.Services
 {
     public interface ICheckoutService
     {
+        public Task<Result<OrderResponse>> HandleSuccess(string sessionId);
         public Task<Result<OrderResponse>> CheckoutAsync(string userId, CheckoutRequest request);
     }
 }

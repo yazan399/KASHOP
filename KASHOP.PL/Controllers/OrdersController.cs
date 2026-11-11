@@ -35,20 +35,38 @@ namespace KASHOP.PL.Controllers
 
              public async Task<IActionResult> Checkout([FromBody] CheckoutRequest request)
 
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (userId == null)
-            {
-                return Unauthorized(new { Message = _localizer["Unauthorized"].Value });
-            }
-            var result = await _checkoutService.CheckoutAsync(userId, request);
+             {
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (userId == null)
+                {
+                    return Unauthorized(new { Message = _localizer["Unauthorized"].Value });
+                }
+                var result = await _checkoutService.CheckoutAsync(userId, request);
 
+                if (!result.Success)
+                {
+                    return StatusCode(StatusCodes.Status500InternalServerError, new { Message = result.Message });
+                }
+                return Ok(new { Data = result.Data, Message = _localizer["Success"].Value });
+             }
+
+        [HttpGet("payment/success")]
+        [AllowAnonymous]
+        public async Task<IActionResult> Payment(string sessionId)
+        {
+            var result = await _checkoutService.HandleSuccess(sessionId);
             if (!result.Success)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, new { Message = result.Message });
             }
-            return Ok(new { Data = result.Data, Message = _localizer["Success"].Value });
+            return Ok(new { Data = result.Data, Message = _localizer["PaymentSuccessful"].Value });
         }
 
+
+        [HttpGet("payment/cancel")]
+        public async Task<IActionResult> Cancel(string sessionId)
+        {
+            return Ok(new { Message = _localizer["PaymentCancelled"].Value });
+        }
     }
 }
