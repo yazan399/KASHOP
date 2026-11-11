@@ -38,6 +38,9 @@ namespace KASHOP.BLL.Mapping
             .Select(t => t.Name)
             .First());
 
+            TypeAdapterConfig<Order, OrderSummaryResponse>.NewConfig()
+                .Map(dest => dest.ItemsCount, src => src.OrderItems.Sum(item => item.Count));
+
 
 
         }

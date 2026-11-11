@@ -14,6 +14,7 @@ namespace KASHOP.PL.Extensions
 
         public static IServiceCollection AddServices (this IServiceCollection Services, IConfiguration Configuration)
         {
+            Services.AddScoped<IOrderService, BLL.Services.OrderService>();
             Services.AddScoped<ICheckoutService, BLL.Services.CheckoutService>();
             Services.AddScoped<IUnitOfWork, UnitOfWork>();
             Services.AddExceptionHandler<GlobalExceptionHandler>();
@@ -24,6 +25,7 @@ namespace KASHOP.PL.Extensions
 
             Services.AddScoped<IAuthenticationService, AuthenticationService>();
             Services.AddScoped<ISeedData, RoleSeedData>();
+            Services.AddScoped<ISeedData, UserSeedData>();
             Services.AddTransient<IEmailSender, EmailSender>();
 
             Services.Configure<StripeSettings>(Configuration.GetSection("Stripe"));

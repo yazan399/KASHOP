@@ -12,9 +12,11 @@ using Microsoft.EntityFrameworkCore;
 using KASHOP.PL.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using System.Text;
 using System.Globalization;
 using System.Text;
 using KASHOP.BLL.Mapping;
+using System.Text.Json.Serialization;
 
 namespace KASHOP.PL
 {
@@ -25,6 +27,11 @@ namespace KASHOP.PL
             var builder = WebApplication.CreateBuilder(args);
 
             builder.Services.AddApplicationServices(builder.Configuration);
+
+            builder.Services.AddControllers().AddJsonOptions(options =>
+            {
+                options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+            });
 
             var app = builder.Build();
 
