@@ -13,6 +13,7 @@ namespace KASHOP.DAL.Repository
         public Task<T> CreateAsync(T entity);
         public Task<T> GetOneAsync(Expression<Func<T, bool>> filter, string[]? includes = null);
         void Delete(T entity);
+        public IQueryable<T> GetQueryable(Expression<Func<T, bool>>? filter = null, string[]? includes = null);
 
     }
 

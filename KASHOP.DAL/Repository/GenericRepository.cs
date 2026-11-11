@@ -52,7 +52,26 @@ namespace KASHOP.DAL.Repository
             return entity;
 
         }
-        
+
+
+        // This method returns an IQueryable<T> that can be further queried or paginated
+        public IQueryable<T> GetQueryable(Expression<Func<T, bool>>? filter = null, string[]? includes = null)
+        {
+            IQueryable<T> query = _context.Set<T>();
+            if (includes != null)
+            {
+                foreach (var include in includes)
+                {
+                    query = query.Include(include);
+                }
+            }
+            if (filter != null)
+            {
+                query = query.Where(filter);
+            }
+            return query;
+        }
+
 
         public async Task<T> CreateAsync(T entity)
         {

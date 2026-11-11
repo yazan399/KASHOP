@@ -10,7 +10,7 @@ namespace KASHOP.DAL.Enums
     {
         Pending = 1,
         Confirmed = 2,
-        Approved = 3,
+        Preparing = 3,
         Delivered = 4,
         Canceled = 5
     }

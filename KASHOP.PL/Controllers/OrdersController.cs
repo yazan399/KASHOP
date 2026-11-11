@@ -105,10 +105,33 @@ namespace KASHOP.PL.Controllers
         }
 
         [HttpGet("admin")]
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> GetAllOrders([FromQuery] OrderStatusEnum? status=OrderStatusEnum.Pending)
+        [Authorize(Roles = "Admin,SuperAdmin")]
+        public async Task<IActionResult> GetAllOrders([FromQuery] OrderStatusEnum? status)
         {
             var result = await _orderService.GetAllOrdersAsync(status);
+            if (!result.Success)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new { Message = result.Message });
+            }
+            return Ok(new { Data = result.Data, Message = _localizer["Success"].Value });
+        }
+        [HttpGet("admin/status")]
+        [Authorize(Roles = "Admin,SuperAdmin")]
+        public async Task<IActionResult> GetAllOrdersByStaus([FromQuery] OrderStatusEnum? status = OrderStatusEnum.Pending)
+        {
+            var result = await _orderService.GetAllOrdersAsync(status);
+            if (!result.Success)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new { Message = result.Message });
+            }
+            return Ok(new { Data = result.Data, Message = _localizer["Success"].Value });
+        }
+
+        [HttpPatch("admin/{orderId}/status")]
+        [Authorize(Roles = "Admin,SuperAdmin")]
+        public async Task<IActionResult> UpdateOrderStatus(string orderId, [FromQuery] OrderStatusEnum newStatus)
+        {
+            var result = await _orderService.UpdateOrderStatusAsync(orderId, newStatus);
             if (!result.Success)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, new { Message = result.Message });

@@ -14,8 +14,10 @@ namespace KASHOP.BLL.Services
         public Task<Result<List<OrderSummaryResponse>>> GetUserOrdersAsync(string userId);
         public Task<Result<OrderDetailsResponse>> GetUserOrderDetailsAsync(string userId, string orderId);
 
-        public Task<Result<OrderDetailsResponse>> GetAllOrdersAsync(OrderStatusEnum? status);
-            
-        
+        public Task<Result<List<OrderDetailsResponse>>> GetAllOrdersAsync(OrderStatusEnum? status);
+
+        public Task<Result<OrderDetailsResponse>> UpdateOrderStatusAsync(string orderId, OrderStatusEnum newStatus);
+
+
     }
 }

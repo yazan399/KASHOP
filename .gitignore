@@ -1,6 +1,7 @@
 ## .NET build output
 bin/
 obj/
+.build/
 
 ## Visual Studio / Rider user files
 .vs/

@@ -7,6 +7,7 @@ using KASHOP.DAL.Models;
 using KASHOP.DAL.Dto;
 using Mapster;
 using System.Linq.Expressions;
+using KASHOP.BLL.Extensions;
 using KASHOP.DAL.Repository;
 using System.Globalization;
 
@@ -73,17 +74,31 @@ namespace KASHOP.BLL.Services
 
 
 
-        public async Task<Result<List<ProductResponse>>> GetAllProductsAsync()
-        {
-            var products = await _unitOfWork.ProductRepository.GetAllAsync(includes: new string[] { nameof(Product.Translations), nameof(Product.Category) });
-            if (products == null || !products.Any())
-            {
-                return Result<List<ProductResponse>>.Fail("No products found.");
-            }
 
-            var response = products.Adapt<List<ProductResponse>>();
-            return Result<List<ProductResponse>>.Ok(response);
+        public async Task<Result<paginationResponse<ProductResponse>>> GetAllProductsAsync(PaginationRequest pagination)
+        {
+            var query = _unitOfWork.ProductRepository.GetQueryable(null, new string[] { nameof(Product.Translations), nameof(Product.Category) });
+
+            if (!string.IsNullOrWhiteSpace(pagination.Search))
+            {
+                query = query.Where(p => p.Translations.Any(t => t.Name.Contains(pagination.Search)));
+            }
+            query = query.OrderByDescending(p => p.Id);
+
+            var paginatedResult = await query.ToPaginateAsync(pagination.PageNumber, pagination.PageSize);
+            var response = paginatedResult.Data.Adapt<List<ProductResponse>>();
+
+            var result = new paginationResponse<ProductResponse>
+            {
+                Data = response,
+                TotalCount = paginatedResult.TotalCount,
+                PageNumber = paginatedResult.PageNumber,
+                PageSize = paginatedResult.PageSize
+            };
+            return Result<paginationResponse<ProductResponse>>.Ok(result);
         }
+         
+        
         
         public async Task<Result<ProductResponse>> GetProduct(Expression<Func<Product, bool>> filter)
         {

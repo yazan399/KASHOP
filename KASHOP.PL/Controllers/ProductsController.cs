@@ -37,9 +37,9 @@ namespace KASHOP.PL.Controllers
             return Ok(new { Data = result.Data, Message = _localizer["Success"].Value });
         }
         [HttpGet]
-        public async Task<IActionResult> GetAllProducts()
+        public async Task<IActionResult> GetAllProducts([FromQuery] PaginationRequest pagination)
         {
-            var result = await _productService.GetAllProductsAsync();
+            var result = await _productService.GetAllProductsAsync(pagination);
             if (!result.Success)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, new { Message = result.Message });

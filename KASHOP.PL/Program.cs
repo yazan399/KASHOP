@@ -48,6 +48,7 @@ namespace KASHOP.PL
             app.UseStaticFiles();
             app.UseHttpsRedirection();
 
+            app.UseAuthentication();
             app.UseAuthorization();
 
             await app.SeedDataAsync();

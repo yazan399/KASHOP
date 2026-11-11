@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using KASHOP.DAL.Models;
+using Microsoft.AspNetCore.Identity;
 using KASHOP.DAL.Dto;
 using Mapster;
 using System.Linq.Expressions;
@@ -16,15 +17,23 @@ namespace KASHOP.BLL.Services
     public class CartService : ICartService
     {
         private readonly IUnitOfWork _unitOfWork;
-        public CartService(IUnitOfWork unitOfWork)
+        private readonly UserManager<ApplicationUser> _userManager;
+
+        public CartService(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager)
         {
             _unitOfWork = unitOfWork;
+            _userManager = userManager;
         }
 
 
 
         public async Task<Result<bool>> AddToCart(string userId, CartItemRequest cartRequest)
         {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return Result<bool>.Fail("User not found");
+            }
 
             var product = await _unitOfWork.ProductRepository.GetOneAsync(p => p.Id == cartRequest.ProductId);
 
