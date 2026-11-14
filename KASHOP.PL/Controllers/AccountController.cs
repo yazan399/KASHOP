@@ -9,6 +9,7 @@ using KASHOP.DAL.Data;
 using Microsoft.EntityFrameworkCore; 
 using KASHOP.DAL.Repository;
 using KASHOP.BLL.Services;
+using Microsoft.AspNetCore.Authorization;
 
 
 namespace KASHOP.PL.Controllers
@@ -24,15 +25,28 @@ namespace KASHOP.PL.Controllers
             _authenticationUserService = authenticationUserService;
         }
         [HttpGet("users")]
-        public async Task<IActionResult> GetAll()
+        [Authorize(Roles = "Admin,Super Admin")]
+        public async Task<IActionResult> GetAll([FromQuery] UserQueryRequest queryRequest)
         {
-            var result = await _authenticationUserService.GetAllUsersAsync();
+            var result = await _authenticationUserService.GetAllUsersAsync(queryRequest);
             if (!result.Success)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, new { Message = result.Message });
             }
 
-            return Ok(result.Data);
+            return Ok(new { Data = result.Data });
+        }
+
+        [HttpGet("users/{userId}")]
+        [Authorize(Roles = "Admin,Super Admin")]
+        public async Task<IActionResult> GetById([FromRoute] string userId)
+        {
+            var result = await _authenticationUserService.GetUserByIdAsync(userId);
+            if (!result.Success)
+            {
+                return NotFound(new { Message = result.Message });
+            }
+            return Ok(new { Data = result.Data });
         }
 
         [HttpPost("register")]

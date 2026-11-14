@@ -9,6 +9,7 @@ using Mapster;
 using System.Linq.Expressions;
 using KASHOP.DAL.Repository;
 using System.Globalization;
+using KASHOP.BLL.Extensions;
 namespace KASHOP.BLL.Services
 {
     public class CategoryService : ICategoryService
@@ -18,11 +19,30 @@ namespace KASHOP.BLL.Services
         {
             _unitOfWork = unitOfWork;
         }
-        public async Task<Result<List<CategoryResponse>>> GetAllCategoriesAsync()
+        public async Task<Result<paginationResponse<CategoryResponse>>> GetAllCategoriesAsync(CategoryQueryRequest queryRequest)
         {
-            var categories = await _unitOfWork.CategoryRepository.GetAllAsync(includes: new string[] { nameof(Category.Translations), nameof(Category.CreatedBy) });
-            var response = categories.Adapt<List<CategoryResponse>>();
-            return Result<List<CategoryResponse>>.Ok(response);
+            var query = _unitOfWork.CategoryRepository.GetQueryable(includes: [nameof(Category.Translations), nameof(Category.CreatedBy)]);
+            if (!string.IsNullOrWhiteSpace(queryRequest.Search))
+                query = query.Where(c => c.Translations.Any(t => t.Name.Contains(queryRequest.Search)));
+
+            query = (queryRequest.SortBy, queryRequest.SortDescending) switch
+            {
+                (CategorySortBy.Name, false) => query.OrderBy(c => c.Translations.Select(t => t.Name).FirstOrDefault()),
+                (CategorySortBy.Name, true) => query.OrderByDescending(c => c.Translations.Select(t => t.Name).FirstOrDefault()),
+                (CategorySortBy.CreatedOn, false) => query.OrderBy(c => c.CreatedOn),
+                (CategorySortBy.CreatedOn, true) => query.OrderByDescending(c => c.CreatedOn),
+                (CategorySortBy.Id, false) => query.OrderBy(c => c.Id),
+                _ => query.OrderByDescending(c => c.Id)
+            };
+
+            var page = await query.ToPaginateAsync(queryRequest.PageNumber, queryRequest.PageSize);
+            return Result<paginationResponse<CategoryResponse>>.Ok(new paginationResponse<CategoryResponse>
+            {
+                Data = page.Data.Adapt<List<CategoryResponse>>(),
+                TotalCount = page.TotalCount,
+                PageNumber = page.PageNumber,
+                PageSize = page.PageSize
+            });
         }
         public async Task<Result<CategoryResponse>> GetOneCategoryAsync(
             Expression<Func<Category, bool>> filter)
@@ -45,6 +65,12 @@ namespace KASHOP.BLL.Services
         }
         public async Task<Result<CategoryResponse>> CreateCategoryAsync(CategoryRequest categoryRequest)
         {
+            if (categoryRequest.Translations == null || categoryRequest.Translations.Count == 0 ||
+                categoryRequest.Translations.Any(t => string.IsNullOrWhiteSpace(t.Name) || string.IsNullOrWhiteSpace(t.Language)) ||
+                categoryRequest.Translations.GroupBy(t => t.Language, StringComparer.OrdinalIgnoreCase).Any(g => g.Count() > 1))
+            {
+                return Result<CategoryResponse>.Fail("Provide one complete translation per language.");
+            }
             var category = categoryRequest.Adapt<Category>();
             var createdCategory = await _unitOfWork.CategoryRepository.CreateAsync(category);
             await _unitOfWork.CompleteAsync();

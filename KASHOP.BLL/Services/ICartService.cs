@@ -10,7 +10,8 @@ namespace KASHOP.BLL.Services
 {
     public interface ICartService
     {
-        public Task<Result<List<CartItemResponse>>> GetCartItemsAsync(string userId);
+        public Task<Result<paginationResponse<CartItemResponse>>> GetCartItemsAsync(string userId, CartQueryRequest queryRequest);
+        public Task<Result<CartItemResponse>> GetCartItemAsync(string userId, int productId);
         public Task<Result<bool>> AddToCart(string userId, CartItemRequest cartRequest);
         public Task<Result<bool>> UpdateQuantity(string userId, int productId, int newCount);
         public Task<Result<bool>> RemoveFromCart(string userId, int productId);

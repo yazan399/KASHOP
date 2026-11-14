@@ -10,6 +10,7 @@ using Mapster;
 using System.Linq.Expressions;
 using KASHOP.DAL.Repository;
 using System.Globalization;
+using KASHOP.BLL.Extensions;
 
 
 namespace KASHOP.BLL.Services
@@ -72,13 +73,41 @@ namespace KASHOP.BLL.Services
 
        
 
-        public async Task<Result<List<CartItemResponse>>> GetCartItemsAsync(string userId)
+        public async Task<Result<paginationResponse<CartItemResponse>>> GetCartItemsAsync(string userId, CartQueryRequest queryRequest)
         {
-            var cartItems =
-            await _unitOfWork.CartRepository.GetAllAsync(c => c.UserId == userId,includes: new[] { nameof(CartItem.Product) ,$"{nameof(CartItem.Product)}.{nameof(Product.Translations)}" });
+            var query = _unitOfWork.CartRepository.GetQueryable(c => c.UserId == userId, [nameof(CartItem.Product), $"{nameof(CartItem.Product)}.{nameof(Product.Translations)}"]);
+            if (!string.IsNullOrWhiteSpace(queryRequest.Search))
+                query = query.Where(c => c.Product.Translations.Any(t => t.Name.Contains(queryRequest.Search)));
 
-            var response = cartItems.Adapt<List<CartItemResponse>>();
-            return Result<List<CartItemResponse>>.Ok(response);
+            query = (queryRequest.SortBy, queryRequest.SortDescending) switch
+            {
+                (CartSortBy.ProductName, false) => query.OrderBy(c => c.Product.Translations.Select(t => t.Name).FirstOrDefault()),
+                (CartSortBy.ProductName, true) => query.OrderByDescending(c => c.Product.Translations.Select(t => t.Name).FirstOrDefault()),
+                (CartSortBy.Price, false) => query.OrderBy(c => c.Product.Price),
+                (CartSortBy.Price, true) => query.OrderByDescending(c => c.Product.Price),
+                (CartSortBy.Count, false) => query.OrderBy(c => c.Count),
+                (CartSortBy.Count, true) => query.OrderByDescending(c => c.Count),
+                (CartSortBy.Total, false) => query.OrderBy(c => c.Count * c.Product.Price),
+                _ => query.OrderByDescending(c => c.Count * c.Product.Price)
+            };
+            var page = await query.ToPaginateAsync(queryRequest.PageNumber, queryRequest.PageSize);
+            return Result<paginationResponse<CartItemResponse>>.Ok(new paginationResponse<CartItemResponse>
+            {
+                Data = page.Data.Adapt<List<CartItemResponse>>(),
+                TotalCount = page.TotalCount,
+                PageNumber = page.PageNumber,
+                PageSize = page.PageSize
+            });
+        }
+
+        public async Task<Result<CartItemResponse>> GetCartItemAsync(string userId, int productId)
+        {
+            var cartItem = await _unitOfWork.CartRepository.GetOneAsync(
+                c => c.UserId == userId && c.ProductId == productId,
+                [nameof(CartItem.Product), $"{nameof(CartItem.Product)}.{nameof(Product.Translations)}"]);
+            return cartItem == null
+                ? Result<CartItemResponse>.Fail("Cart item not found")
+                : Result<CartItemResponse>.Ok(cartItem.Adapt<CartItemResponse>());
         }
 
      
@@ -96,19 +125,19 @@ namespace KASHOP.BLL.Services
         }
 
 
-        public Task<Result<bool>> ClearCart(string userId)
+        public async Task<Result<bool>> ClearCart(string userId)
         {
-            var cartItems = _unitOfWork.CartRepository.GetAllAsync(c => c.UserId == userId).Result;
+            var cartItems = await _unitOfWork.CartRepository.GetAllAsync(c => c.UserId == userId);
             if (cartItems == null || !cartItems.Any())
             {
-                return Task.FromResult(Result<bool>.Fail("Cart is already empty"));
+                return Result<bool>.Fail("Cart is already empty");
             }
             foreach (var cartItem in cartItems)
             {
                 _unitOfWork.CartRepository.Delete(cartItem);
             }
-            _unitOfWork.CompleteAsync().Wait();
-            return Task.FromResult(Result<bool>.Ok(true));
+            await _unitOfWork.CompleteAsync();
+            return Result<bool>.Ok(true);
         }
 
         public  async Task<Result<bool>> UpdateQuantity(string userId, int productId, int newCount)

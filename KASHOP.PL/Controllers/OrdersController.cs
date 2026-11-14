@@ -73,14 +73,14 @@ namespace KASHOP.PL.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetUserOrders()
+        public async Task<IActionResult> GetUserOrders([FromQuery] OrderQueryRequest queryRequest)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (userId == null)
             {
                 return Unauthorized(new { Message = _localizer["Unauthorized"].Value });
             }
-            var result = await _orderService.GetUserOrdersAsync(userId);
+            var result = await _orderService.GetUserOrdersAsync(userId, queryRequest);
             if (!result.Success)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, new { Message = result.Message });
@@ -105,21 +105,10 @@ namespace KASHOP.PL.Controllers
         }
 
         [HttpGet("admin")]
-        [Authorize(Roles = "Admin,SuperAdmin")]
-        public async Task<IActionResult> GetAllOrders([FromQuery] OrderStatusEnum? status)
+        [Authorize(Roles = "Admin,Super Admin")]
+        public async Task<IActionResult> GetAllOrders([FromQuery] OrderQueryRequest queryRequest)
         {
-            var result = await _orderService.GetAllOrdersAsync(status);
-            if (!result.Success)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, new { Message = result.Message });
-            }
-            return Ok(new { Data = result.Data, Message = _localizer["Success"].Value });
-        }
-        [HttpGet("admin/status")]
-        [Authorize(Roles = "Admin,SuperAdmin")]
-        public async Task<IActionResult> GetAllOrdersByStaus([FromQuery] OrderStatusEnum? status = OrderStatusEnum.Pending)
-        {
-            var result = await _orderService.GetAllOrdersAsync(status);
+            var result = await _orderService.GetAllOrdersAsync(queryRequest);
             if (!result.Success)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, new { Message = result.Message });
@@ -127,11 +116,35 @@ namespace KASHOP.PL.Controllers
             return Ok(new { Data = result.Data, Message = _localizer["Success"].Value });
         }
 
-        [HttpPatch("admin/{orderId}/status")]
-        [Authorize(Roles = "Admin,SuperAdmin")]
-        public async Task<IActionResult> UpdateOrderStatus(string orderId, [FromQuery] OrderStatusEnum newStatus)
+        [HttpGet("admin/{orderId}")]
+        [Authorize(Roles = "Admin,Super Admin")]
+        public async Task<IActionResult> GetOrderDetailsForAdmin(string orderId)
         {
-            var result = await _orderService.UpdateOrderStatusAsync(orderId, newStatus);
+            var result = await _orderService.GetOrderDetailsAsync(orderId);
+            if (!result.Success)
+            {
+                return NotFound(new { Message = result.Message });
+            }
+            return Ok(new { Data = result.Data, Message = _localizer["Success"].Value });
+        }
+
+        [HttpGet("admin/status")]
+        [Authorize(Roles = "Admin,Super Admin")]
+        public async Task<IActionResult> GetAllOrdersByStatus([FromQuery] OrderQueryRequest queryRequest)
+        {
+            queryRequest.Status ??= OrderStatusEnum.Pending;
+            var result = await _orderService.GetAllOrdersAsync(queryRequest);
+            if (!result.Success)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new { Message = result.Message });
+            }
+            return Ok(new { Data = result.Data, Message = _localizer["Success"].Value });
+        }
+        [HttpPatch("admin/{orderId}/status")]
+        [Authorize(Roles = "Admin,Super Admin")]
+        public async Task<IActionResult> UpdateOrderStatus(string orderId, [FromBody] ChangeOrderStatusRequest request)
+        {
+            var result = await _orderService.UpdateOrderStatusAsync(orderId, request.NewStatus);
             if (!result.Success)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, new { Message = result.Message });

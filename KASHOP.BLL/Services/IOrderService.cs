@@ -11,10 +11,11 @@ namespace KASHOP.BLL.Services
     public interface IOrderService
     {
 
-        public Task<Result<List<OrderSummaryResponse>>> GetUserOrdersAsync(string userId);
+        public Task<Result<paginationResponse<OrderSummaryResponse>>> GetUserOrdersAsync(string userId, OrderQueryRequest queryRequest);
         public Task<Result<OrderDetailsResponse>> GetUserOrderDetailsAsync(string userId, string orderId);
+        public Task<Result<OrderDetailsResponse>> GetOrderDetailsAsync(string orderId);
 
-        public Task<Result<List<OrderDetailsResponse>>> GetAllOrdersAsync(OrderStatusEnum? status);
+        public Task<Result<paginationResponse<OrderDetailsResponse>>> GetAllOrdersAsync(OrderQueryRequest queryRequest);
 
         public Task<Result<OrderDetailsResponse>> UpdateOrderStatusAsync(string orderId, OrderStatusEnum newStatus);
 

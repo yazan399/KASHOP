@@ -27,19 +27,21 @@ namespace KASHOP.PL.Controllers
             _localizer = localizer;
         }
         [HttpPost]
+        [Authorize(Roles = "Admin,Super Admin")]
         public async Task<IActionResult> CreateProduct([FromForm] ProductRequest productRequest)
         {
             var result = await _productService.CreateProductAsync(productRequest);
             if (!result.Success)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, new { Message = result.Message });
+                return BadRequest(new { Message = result.Message });
             }
             return Ok(new { Data = result.Data, Message = _localizer["Success"].Value });
         }
         [HttpGet]
-        public async Task<IActionResult> GetAllProducts([FromQuery] PaginationRequest pagination)
+        [AllowAnonymous]
+        public async Task<IActionResult> GetAllProducts([FromQuery] ProductQueryRequest queryRequest)
         {
-            var result = await _productService.GetAllProductsAsync(pagination);
+            var result = await _productService.GetAllProductsAsync(queryRequest);
             if (!result.Success)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, new { Message = result.Message });
@@ -48,18 +50,31 @@ namespace KASHOP.PL.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetProductById(int id)
+        [AllowAnonymous]
+        public async Task<IActionResult> GetProductById([FromRoute] int id)
         {
             var result = await _productService.GetProduct(p => p.Id == id);
             if (!result.Success)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, new { Message = result.Message });
+                return NotFound(new { Message = result.Message });
+            }
+            return Ok(new { Data = result.Data, Message = _localizer["Success"].Value });
+        }
+
+        [HttpGet("name/{name}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetProductByName([FromRoute] string name)
+        {
+            var result = await _productService.GetProduct(p => p.Translations.Any(t => t.Name == name));
+            if (!result.Success)
+            {
+                return NotFound(new { Message = result.Message });
             }
             return Ok(new { Data = result.Data, Message = _localizer["Success"].Value });
         }
 
         [HttpDelete("{id}")]
-        [Authorize]
+        [Authorize(Roles = "Admin,Super Admin")]
         public async Task<IActionResult> DeleteProduct(int id)
         {
             var result = await _productService.DeleteProduct(id);

@@ -45,23 +45,39 @@ namespace KASHOP.PL.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetCart()
+        public async Task<IActionResult> GetCart([FromQuery] CartQueryRequest queryRequest)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (userId == null)
             {
                 return Unauthorized(new { Message = _localizer["Unauthorized"].Value });
             }
-            var result = await _cartService.GetCartItemsAsync(userId);
+            var result = await _cartService.GetCartItemsAsync(userId, queryRequest);
             if (!result.Success)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, new { Message = result.Message });
             }
             return Ok(new { Data = result.Data, Message = _localizer["Success"].Value });
         }
+
+        [HttpGet("{productId:int}")]
+        public async Task<IActionResult> GetCartItem([FromRoute] int productId)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null)
+            {
+                return Unauthorized(new { Message = _localizer["Unauthorized"].Value });
+            }
+            var result = await _cartService.GetCartItemAsync(userId, productId);
+            if (!result.Success)
+            {
+                return NotFound(new { Message = result.Message });
+            }
+            return Ok(new { Data = result.Data, Message = _localizer["Success"].Value });
+        }
        
 
-        [HttpDelete("{productId}")]
+        [HttpDelete("{productId:int}")]
         public async Task<IActionResult> RemoveFromCart([FromRoute] int productId)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -78,15 +94,15 @@ namespace KASHOP.PL.Controllers
         }
 
 
-        [HttpPut("{productId}")]
-        public async Task<IActionResult> UpdateQuantity(int productId, [FromBody] int newCount)
+        [HttpPut("{productId:int}")]
+        public async Task<IActionResult> UpdateQuantity(int productId, [FromBody] UpdateCartQuantityRequest request)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (userId == null)
             {
                 return Unauthorized(new { Message = _localizer["Unauthorized"].Value });
             }
-            var result = await _cartService.UpdateQuantity(userId, productId, newCount);
+            var result = await _cartService.UpdateQuantity(userId, productId, request.Count);
             if (!result.Success)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, new { Message = result.Message });

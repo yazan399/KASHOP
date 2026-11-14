@@ -1,0 +1,137 @@
+{
+  "info": {
+    "name": "KASHOP API — Complete Role Tests",
+    "description": "Role-based API test collection. Read POSTMAN_COLLECTION_STRUCTURE.md for the complete folder-by-folder test plan.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "https://localhost:7158" },
+    { "key": "adminToken", "value": "" },
+    { "key": "superAdminToken", "value": "" },
+    { "key": "userToken", "value": "" },
+    { "key": "categoryId", "value": "1" },
+    { "key": "productId", "value": "1" },
+    { "key": "orderId", "value": "" },
+    { "key": "stripeSessionId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register - User",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"fullName\": \"Postman User\",\n  \"email\": \"postman.user@example.com\",\n  \"password\": \"Password123!\",\n  \"userName\": \"postmanuser\",\n  \"phoneNumber\": \"1234567890\"\n}" },
+            "url": "{{baseUrl}}/api/Account/register"
+          }
+        },
+        {
+          "name": "Login - Admin",
+          "event": [{ "listen": "test", "script": { "exec": ["const body = pm.response.json();", "pm.collectionVariables.set('adminToken', body.token);"] } }],
+          "request": {
+            "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"email\":\"admin1@example.com\",\"password\":\"Password123!\"}" },
+            "url": "{{baseUrl}}/api/Account/login"
+          }
+        },
+        {
+          "name": "Login - Super Admin",
+          "event": [{ "listen": "test", "script": { "exec": ["const body = pm.response.json();", "pm.collectionVariables.set('superAdminToken', body.token);"] } }],
+          "request": {
+            "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"email\":\"superadmin1@example.com\",\"password\":\"Password123!\"}" },
+            "url": "{{baseUrl}}/api/Account/login"
+          }
+        },
+        {
+          "name": "Login - User",
+          "event": [{ "listen": "test", "script": { "exec": ["const body = pm.response.json();", "pm.collectionVariables.set('userToken', body.token);"] } }],
+          "request": {
+            "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"email\":\"user1@example.com\",\"password\":\"Password123!\"}" },
+            "url": "{{baseUrl}}/api/Account/login"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Public catalogue",
+      "item": [
+        { "name": "List Categories - page/search/sort", "request": { "method": "GET", "url": "{{baseUrl}}/api/Categories?pageNumber=1&pageSize=10&search=home&sortBy=Name&sortDescending=false" } },
+        { "name": "Category by ID", "request": { "method": "GET", "url": "{{baseUrl}}/api/Categories/{{categoryId}}" } },
+        { "name": "Category by Name", "request": { "method": "GET", "url": "{{baseUrl}}/api/Categories/name/Home" } },
+        { "name": "List Products - all filters", "request": { "method": "GET", "url": "{{baseUrl}}/api/Products?pageNumber=1&pageSize=10&search=chair&categoryId={{categoryId}}&minPrice=1&maxPrice=1000&inStock=true&sortBy=Price&sortDescending=true" } },
+        { "name": "Product by ID", "request": { "method": "GET", "url": "{{baseUrl}}/api/Products/{{productId}}" } },
+        { "name": "Product by Name", "request": { "method": "GET", "url": "{{baseUrl}}/api/Products/name/Postman%20chair" } }
+      ]
+    },
+    {
+      "name": "Admin catalogue",
+      "item": [
+        {
+          "name": "Create Category",
+          "event": [{ "listen": "test", "script": { "exec": ["pm.collectionVariables.set('categoryId', pm.response.json().data.id);"] } }],
+          "request": {
+            "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"translations\":[{\"name\":\"Postman furniture\",\"language\":\"en-US\"}]}" },
+            "url": "{{baseUrl}}/api/Categories"
+          }
+        },
+        {
+          "name": "Create Product (multipart/form-data)",
+          "event": [{ "listen": "test", "script": { "exec": ["pm.collectionVariables.set('productId', pm.response.json().data.id);"] } }],
+          "request": {
+            "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "body": { "mode": "formdata", "formdata": [
+              { "key": "price", "value": "99.99", "type": "text" },
+              { "key": "quantity", "value": "20", "type": "text" },
+              { "key": "discount", "value": "10", "type": "text" },
+              { "key": "categoryId", "value": "{{categoryId}}", "type": "text" },
+              { "key": "translations[0].name", "value": "Postman chair", "type": "text" },
+              { "key": "translations[0].description", "value": "A product made for testing.", "type": "text" },
+              { "key": "translations[0].language", "value": "en-US", "type": "text" },
+              { "key": "mainImage", "type": "file", "src": "REPLACE_WITH_LOCAL_IMAGE_PATH" }
+            ]},
+            "url": "{{baseUrl}}/api/Products"
+          }
+        },
+        { "name": "Delete Product (run last)", "request": { "method": "DELETE", "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }], "url": "{{baseUrl}}/api/Products/{{productId}}" } },
+        { "name": "Delete Category (run after product delete)", "request": { "method": "DELETE", "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }], "url": "{{baseUrl}}/api/Categories/{{categoryId}}" } }
+      ]
+    },
+    {
+      "name": "User cart and orders",
+      "item": [
+        { "name": "Add to Cart", "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }, { "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"productId\":{{productId}},\"count\":2}" }, "url": "{{baseUrl}}/api/Carts" } },
+        { "name": "Get Cart - page/search/sort", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }], "url": "{{baseUrl}}/api/Carts?pageNumber=1&pageSize=10&search=chair&sortBy=Total&sortDescending=true" } },
+        { "name": "Cart Item by Product ID", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }], "url": "{{baseUrl}}/api/Carts/{{productId}}" } },
+        { "name": "Update Cart Quantity", "request": { "method": "PUT", "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }, { "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"count\":1}" }, "url": "{{baseUrl}}/api/Carts/{{productId}}" } },
+        { "name": "Remove from Cart", "request": { "method": "DELETE", "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }], "url": "{{baseUrl}}/api/Carts/{{productId}}" } },
+        { "name": "Clear Cart", "request": { "method": "DELETE", "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }], "url": "{{baseUrl}}/api/Carts/clear" } },
+        {
+          "name": "Checkout - Cash",
+          "event": [{ "listen": "test", "script": { "exec": ["pm.collectionVariables.set('orderId', pm.response.json().data.id);"] } }],
+          "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }, { "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"paymentMethod\":\"Cash\",\"city\":\"Hebron\",\"street\":\"Main Street\",\"phoneNumber\":\"1234567890\"}" }, "url": "{{baseUrl}}/api/Orders/checkout" }
+        },
+        { "name": "My Orders - page/search/filter/sort", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }], "url": "{{baseUrl}}/api/Orders?pageNumber=1&pageSize=10&search=Hebron&status=Pending&paymentStatus=Pending&paymentMethod=Cash&fromDate=2026-01-01&toDate=2026-12-31&sortBy=OrderDate&sortDescending=true" } },
+        { "name": "My Order Detail", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }], "url": "{{baseUrl}}/api/Orders/{{orderId}}" } },
+        { "name": "Payment Success (Stripe session only)", "request": { "method": "GET", "url": "{{baseUrl}}/api/Orders/payment/success?sessionId={{stripeSessionId}}" } },
+        { "name": "Payment Cancel", "request": { "method": "GET", "url": "{{baseUrl}}/api/Orders/payment/cancel?sessionId={{stripeSessionId}}" } }
+      ]
+    },
+    {
+      "name": "Admin orders and users",
+      "item": [
+        { "name": "All Orders - page/search/filter/sort", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }], "url": "{{baseUrl}}/api/Orders/admin?pageNumber=1&pageSize=10&search=Hebron&status=Pending&paymentStatus=Pending&paymentMethod=Cash&fromDate=2026-01-01&toDate=2026-12-31&sortBy=TotalAmount&sortDescending=true" } },
+        { "name": "All Pending Orders shortcut", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }], "url": "{{baseUrl}}/api/Orders/admin/status?pageNumber=1&pageSize=10&sortBy=OrderDate&sortDescending=true" } },
+        { "name": "Admin Order Detail by ID", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }], "url": "{{baseUrl}}/api/Orders/admin/{{orderId}}" } },
+        { "name": "Update Order Status", "request": { "method": "PATCH", "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }, { "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"newStatus\":\"Confirmed\"}" }, "url": "{{baseUrl}}/api/Orders/admin/{{orderId}}/status" } },
+        { "name": "List Users - page/search/filter/sort", "event": [{ "listen": "test", "script": { "exec": ["const page = pm.response.json().data;", "if (page.data.length) pm.collectionVariables.set('userId', page.data[0].id);"] } }], "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }], "url": "{{baseUrl}}/api/Account/users?pageNumber=1&pageSize=10&search=admin&emailConfirmed=true&sortBy=Email&sortDescending=false" } },
+        { "name": "User by ID", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }], "url": "{{baseUrl}}/api/Account/users/{{userId}}" } }
+      ]
+    }
+  ]
+}
+

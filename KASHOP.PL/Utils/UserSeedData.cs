@@ -15,7 +15,7 @@ namespace KASHOP.PL.Utils
         }
         public async Task DataSeed()
         {
-            await CreateUserAsync("superadmin1", "superadmin1@example.com", "Password123!", "SuperAdmin", "Super Admin");
+            await CreateUserAsync("superadmin1", "superadmin1@example.com", "Password123!", "Super Admin", "Super Admin");
             await CreateUserAsync("admin1", "admin1@example.com", "Password123!", "Admin", "Admin User");
             await CreateUserAsync("user1", "user1@example.com", "Password123!", "User", "User");
 

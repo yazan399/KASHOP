@@ -28,9 +28,10 @@ namespace KASHOP.PL.Controllers
             _localizer = localizer;
         }
         [HttpGet]
-        public async Task<IActionResult> Index()
+        [AllowAnonymous]
+        public async Task<IActionResult> Index([FromQuery] CategoryQueryRequest queryRequest)
         {
-            var result = await _categoryService.GetAllCategoriesAsync();
+            var result = await _categoryService.GetAllCategoriesAsync(queryRequest);
             if (!result.Success)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, new { Message = result.Message });
@@ -40,6 +41,7 @@ namespace KASHOP.PL.Controllers
         }
 
         [HttpGet("{id}")]
+        [AllowAnonymous]
         public async Task<IActionResult> GetOneById(int id)
         {
             var result = await _categoryService.GetOneCategoryAsync(c => c.Id == id);
@@ -56,6 +58,7 @@ namespace KASHOP.PL.Controllers
             return Ok(new { Data = result.Data, Message = _localizer["Success"].Value });
         }
         [HttpGet("name/{name}")]
+        [AllowAnonymous]
         public async Task<IActionResult> GetOneByName(string name)
         {
             var result = await _categoryService.GetOneCategoryAsync(c => c.Translations.Any(t => t.Name == name));
@@ -75,6 +78,7 @@ namespace KASHOP.PL.Controllers
         // so always i will get the data from client as dto and then i will make it as domain model to save it in db and when i will send the data to client i will make it as dto to send it to client 
 
         [HttpPost]
+        [Authorize(Roles = "Admin,Super Admin")]
         public async Task<IActionResult> Create(CategoryRequest request)
         {
             var result = await _categoryService.CreateCategoryAsync(request);
@@ -90,6 +94,7 @@ namespace KASHOP.PL.Controllers
             });
         }
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin,Super Admin")]
         public async Task<IActionResult> Delete(int id)
         {
             var result = await _categoryService.DeleteCategoryAsync(id);

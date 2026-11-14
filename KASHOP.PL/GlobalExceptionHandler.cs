@@ -14,7 +14,7 @@ namespace KASHOP.PL
             var result = new Result<string>
             {
                 Success = false,
-                Message = exception.InnerException.Message
+                Message = exception.InnerException?.Message ?? exception.Message
             };
             httpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;
             await httpContext.Response.WriteAsJsonAsync(result, cancellationToken);
